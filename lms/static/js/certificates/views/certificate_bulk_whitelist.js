@@ -25,7 +25,8 @@
                 data_format_error: 'data-format-error',
                 user_not_exist: 'user-not-exist',
                 user_already_white_listed: 'user-already-white-listed',
-                user_not_enrolled: 'user-not-enrolled'
+                user_not_enrolled: 'user-not-enrolled',
+                user_on_certificate_invalidation_list: 'user-on-certificate-invalidation-list'
             };
 
             return Backbone.View.extend({
@@ -131,6 +132,14 @@
                                 user_not_enrolled
                             );
                         }
+                        if (row_errors.user_on_certificate_invalidation_list.length) {
+                            var user_on_certificate_invalidation_list = row_errors.user_on_certificate_invalidation_list;
+                            generate_div(
+                                MESSAGE_GROUP.user_on_certificate_invalidation_list,
+                                get_text(user_on_certificate_invalidation_list.length, MESSAGE_GROUP.user_on_certificate_invalidation_list),
+                                user_on_certificate_invalidation_list
+                            );
+                        }
                     }
 
                     function generate_div(group, heading, display_data) {
@@ -185,6 +194,11 @@
                                     ' the exception list') :
                                     gettext(qty + ' learner is not enrolled in course and not added to the exception' +
                                         ' list');
+                            break;
+
+                        case MESSAGE_GROUP.user_on_certificate_invalidation_list:
+                            text = qty > 1 ? gettext(qty + ' learners already appear on the certificate invalidation list') :
+                                    gettext(qty + ' learner already appears on the certificate invalidation list');
                             break;
                         }
                         return text;
