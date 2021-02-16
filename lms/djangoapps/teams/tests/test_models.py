@@ -11,6 +11,7 @@ from unittest.mock import Mock
 import ddt
 import pytest
 import pytz
+from mock import Mock
 from opaque_keys.edx.keys import CourseKey
 
 from common.djangoapps.course_modes.models import CourseMode
