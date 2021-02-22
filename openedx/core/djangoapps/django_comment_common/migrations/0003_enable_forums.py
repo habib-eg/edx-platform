@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from django.db import migrations
+from django.db import migrations, models
 
 
 def add_default_enable(apps, schema_editor):
