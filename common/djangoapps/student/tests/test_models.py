@@ -27,7 +27,6 @@ from lms.djangoapps.courseware.toggles import (
 )
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.schedules.models import Schedule
-from openedx.core.djangoapps.schedules.tests.factories import ScheduleFactory
 from openedx.core.djangoapps.user_api.preferences.api import set_user_preference
 from openedx.core.djangolib.testing.utils import skip_unless_lms
 from common.djangoapps.student.models import (
@@ -155,8 +154,6 @@ class CourseEnrollmentTests(SharedModuleStoreTestCase):  # lint-amnesty, pylint:
         assert enrollment.upgrade_deadline == course_mode.expiration_datetime
 
     @skip_unless_lms
-    # NOTE: We mute the post_save signal to prevent Schedules from being created for new enrollments
-    @factory.django.mute_signals(signals.post_save)
     def test_upgrade_deadline_with_schedule(self):
         """ The property should use either the CourseMode or related Schedule to determine the deadline. """
         course = CourseFactory(self_paced=True)
@@ -175,8 +172,7 @@ class CourseEnrollmentTests(SharedModuleStoreTestCase):  # lint-amnesty, pylint:
 
         # The schedule's upgrade deadline should be used if a schedule exists
         DynamicUpgradeDeadlineConfiguration.objects.create(enabled=True)
-        schedule = ScheduleFactory(enrollment=enrollment)
-        assert enrollment.upgrade_deadline == schedule.upgrade_deadline
+        assert enrollment.upgrade_deadline == enrollment.schedule.upgrade_deadline
 
     @skip_unless_lms
     @ddt.data(*(set(CourseMode.ALL_MODES) - set(CourseMode.AUDIT_MODES)))
@@ -197,7 +193,6 @@ class CourseEnrollmentTests(SharedModuleStoreTestCase):  # lint-amnesty, pylint:
         )
         enrollment = CourseEnrollmentFactory(course_id=course.id, mode=CourseMode.AUDIT)
         DynamicUpgradeDeadlineConfiguration.objects.create(enabled=True)
-        ScheduleFactory(enrollment=enrollment)
         assert enrollment.schedule is not None
         assert enrollment.upgrade_deadline == course_upgrade_deadline
 
@@ -215,13 +210,10 @@ class CourseEnrollmentTests(SharedModuleStoreTestCase):  # lint-amnesty, pylint:
         )
         enrollment = CourseEnrollmentFactory(course_id=course.id, mode=CourseMode.AUDIT)
         DynamicUpgradeDeadlineConfiguration.objects.create(enabled=True)
-        ScheduleFactory(enrollment=enrollment)
         assert enrollment.schedule is not None
         assert enrollment.upgrade_deadline is None
 
     @skip_unless_lms
-    # NOTE: We mute the post_save signal to prevent Schedules from being created for new enrollments
-    @factory.django.mute_signals(signals.post_save)
     def test_enrollments_not_deleted(self):
         """ Recreating a CourseOverview with an outdated version should not delete the associated enrollment. """
         course = CourseFactory(self_paced=True)

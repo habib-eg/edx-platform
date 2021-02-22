@@ -3,8 +3,6 @@
 import datetime
 from unittest.mock import patch
 import pytest
-from edx_toggles.toggles.testutils import override_waffle_flag
-from openedx.core.djangoapps.schedules.config import COURSE_UPDATE_WAFFLE_FLAG
 from openedx.core.djangoapps.schedules.content_highlights import (
     course_has_highlights,
     get_next_section_highlights,
@@ -44,35 +42,22 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
             **kwargs
         )
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_non_existent_course_raises_exception(self):
         nonexistent_course_key = self.course_key.replace(run='no_such_run')
         with pytest.raises(CourseUpdateDoesNotExist):
             get_week_highlights(self.user, nonexistent_course_key, week_num=1)
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_empty_course_raises_exception(self):
         with pytest.raises(CourseUpdateDoesNotExist):
             get_week_highlights(self.user, self.course_key, week_num=1)
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, False)
-    def test_flag_disabled(self):
-        with self.store.bulk_operations(self.course_key):
-            self._create_chapter(highlights=['highlights'])
-
-        assert not course_has_highlights(self.course_key)
-        with pytest.raises(CourseUpdateDoesNotExist):
-            get_week_highlights(self.user, self.course_key, week_num=1)
-
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
-    def test_flag_enabled(self):
+    def test_happy_path(self):
         highlights = ['highlights']
         with self.store.bulk_operations(self.course_key):
             self._create_chapter(highlights=highlights)
         assert course_has_highlights(self.course_key)
         assert get_week_highlights(self.user, self.course_key, week_num=1) == highlights
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_highlights_disabled_for_messaging(self):
         highlights = ['A test highlight.']
         with self.store.bulk_operations(self.course_key):
@@ -89,7 +74,6 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
                 week_num=1,
             )
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_course_with_no_highlights(self):
         with self.store.bulk_operations(self.course_key):
             self._create_chapter(display_name=u"Week 1")
@@ -102,7 +86,6 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
         with pytest.raises(CourseUpdateDoesNotExist):
             get_week_highlights(self.user, self.course_key, week_num=1)
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_course_with_highlights(self):
         with self.store.bulk_operations(self.course_key):
             self._create_chapter(highlights=['a', 'b', 'á'])
@@ -116,7 +99,6 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
         with pytest.raises(CourseUpdateDoesNotExist):
             get_week_highlights(self.user, self.course_key, week_num=3)
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     def test_staff_only(self):
         with self.store.bulk_operations(self.course_key):
             self._create_chapter(
@@ -128,7 +110,6 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
         with pytest.raises(CourseUpdateDoesNotExist):
             get_week_highlights(self.user, self.course_key, week_num=1)
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     @patch('openedx.core.djangoapps.course_date_signals.utils.get_expected_duration')
     def test_get_next_section_highlights(self, mock_duration):
         # All of the dates chosen here are to make things easy and clean to calculate with date offsets
@@ -170,7 +151,6 @@ class TestContentHighlights(ModuleStoreTestCase):  # lint-amnesty, pylint: disab
         with pytest.raises(CourseUpdateDoesNotExist):
             get_next_section_highlights(self.user, self.course_key, two_days_ago, six_days.date())
 
-    @override_waffle_flag(COURSE_UPDATE_WAFFLE_FLAG, True)
     @patch('lms.djangoapps.courseware.module_render.get_module_for_descriptor')
     def test_get_highlights_without_module(self, mock_get_module):
         mock_get_module.return_value = None

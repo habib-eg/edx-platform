@@ -7,7 +7,6 @@ schedule experience built on the Schedules app.
 import logging
 
 from openedx.core.djangoapps.course_date_signals.utils import spaced_out_sections
-from openedx.core.djangoapps.schedules.config import COURSE_UPDATE_WAFFLE_FLAG
 from openedx.core.djangoapps.schedules.exceptions import CourseUpdateDoesNotExist
 from openedx.core.lib.request_utils import get_request_or_stub
 from xmodule.modulestore.django import modulestore
@@ -76,11 +75,6 @@ def get_next_section_highlights(user, course_key, start_date, target_date):
 
 def _get_course_with_highlights(course_key):
     """ Gets Course descriptor iff highlights are enabled for the course """
-    if not COURSE_UPDATE_WAFFLE_FLAG.is_enabled(course_key):
-        raise CourseUpdateDoesNotExist(
-            '{} Course Update Messages waffle flag is disabled.'.format(course_key)
-        )
-
     course_descriptor = _get_course_descriptor(course_key)
     if not course_descriptor.highlights_enabled_for_messaging:
         raise CourseUpdateDoesNotExist(
