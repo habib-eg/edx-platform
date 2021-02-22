@@ -4,7 +4,7 @@
 
 import json
 
-from django.db import migrations
+from django.db import migrations, models
 
 # Converted from the original South migration 0020_certificatehtmlviewconfiguration_data.py
 
