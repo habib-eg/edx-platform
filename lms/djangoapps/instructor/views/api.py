@@ -2638,8 +2638,8 @@ def add_certificate_exception(course_key, student, certificate_exception):
     """
     if _check_if_learner_on_blocklist(course_key, student):
         raise ValueError(
-            _("Student {id} is already on the certificate invalidation list and cannot be added to the "
-              "certificate exception list.".format(id=student.id))
+            _("Student {user} is already on the certificate invalidation list and cannot be added to the "
+              "certificate exception list.".format(user=student.username))
         )
 
     if CertificateWhitelist.get_certificate_white_list(course_key, student):
@@ -2655,7 +2655,8 @@ def add_certificate_exception(course_key, student, certificate_exception):
             'notes': certificate_exception.get('notes', '')
         }
     )
-    log.info('%s has been added to the whitelist in course %s', student.username, course_key)
+
+    log.info(f"{student.username} has been added to the whitelist in course {course_key}")
 
     generated_certificate = GeneratedCertificate.eligible_certificates.filter(
         user=student,
@@ -2931,15 +2932,20 @@ def certificate_invalidation_view(request, course_id):
     # Validate request data and return error response in case of invalid data
     try:
         certificate_invalidation_data = parse_request_data(request)
-        user = _get_user_from_request_data(course_key, certificate_invalidation_data)
-        certificate = _get_certificate_for_user(course_key, user)
+        student = _get_student_from_request_data(certificate_invalidation_data, course_key)
+        certificate = _get_certificate_for_user(course_key, student)
     except ValueError as error:
         return JsonResponse({'message': str(error)}, status=400)
 
     # Invalidate certificate of the given student for the course course
     if request.method == 'POST':
         try:
-            _check_if_learner_on_allowlist(course_key, user)
+            if _check_if_learner_on_allowlist(course_key, student):
+                raise ValueError(_(
+                    "The student {student} appears on the Certificate Exception list in course {course}. Please "
+                    "remove them from the Certificate Exception list before attempting to invalidate their "
+                    "certificate.".format(student=student, course=course_key)
+                ))
             certificate_invalidation = invalidate_certificate(request, certificate, certificate_invalidation_data)
         except ValueError as error:
             return JsonResponse({'message': str(error)}, status=400)
@@ -3046,10 +3052,7 @@ def _create_error_response(request, msg):
     return JsonResponse({"error": msg}, 400)
 
 
-def _get_user_from_request_data(course_key, request_data):
-    """
-    Attempt to retrieve and return User data for a learner from info in the request.
-    """
+def _get_student_from_request_data(request_data, course_key):
     user = request_data.get("user")
     if not user:
         raise ValueError(
@@ -3057,9 +3060,7 @@ def _get_user_from_request_data(course_key, request_data):
               'Kindly fill in username/email and then press "Invalidate Certificate" button.')
         )
 
-    student = get_student(user, course_key)
-
-    return student
+    return get_student(user, course_key)
 
 
 def _get_certificate_for_user(course_key, student):
@@ -3071,24 +3072,20 @@ def _get_certificate_for_user(course_key, student):
     if not certificate:
         raise ValueError(_(
             "The student {student} does not have certificate for the course {course}. Kindly verify student "
-            "username/email and the selected course are correct and try again."
-        ).format(student=student.username, course=course_key.course))
+            "username/email and the selected course are correct and try again.").format(
+                student=student.username, course=course_key.course)
+        )
 
     return certificate
 
 
 def _check_if_learner_on_allowlist(course_key, student):
     """
-    Utility method that will try to determine if the learner is currently on the Allow. This is a check that
+    Utility method that will try to determine if the learner is currently on the allowlist. This is a check that
     occurs as part of adding a learner to the CertificateInvalidation list.
     """
     log.info(f"Checking if {student} is currently on the allowlist of course {course_key}")
-    allowlist_entry = CertificateWhitelist.objects.filter(user=student, course_id=course_key, whitelist=True).exists()
-    if allowlist_entry:
-        raise ValueError(_(
-            "The student {student} appears on the Certificate Exception list in course {course}. Please remove them "
-            "from the Certificate Exception list before attempting to invalidate their certificate."
-        ).format(student=student.username, course=course_key.course))
+    return CertificateWhitelist.objects.filter(user=student, course_id=course_key, whitelist=True).exists()
 
 
 def _check_if_learner_on_blocklist(course_key, student):

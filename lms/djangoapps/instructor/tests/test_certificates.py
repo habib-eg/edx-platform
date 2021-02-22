@@ -756,6 +756,7 @@ class CertificateExceptionViewInstructorApiTest(SharedModuleStoreTestCase):
             mode='honor',
         )
 
+        # create a certificate invalidation tied to the generated certificate
         CertificateInvalidationFactory.create(
             generated_certificate=generated_certificate,
             invalidated_by=self.global_staff,
@@ -770,11 +771,10 @@ class CertificateExceptionViewInstructorApiTest(SharedModuleStoreTestCase):
         )
 
         res_json = json.loads(response.content.decode('utf-8'))
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            res_json['message'],
+        assert response.status_code == 400
+        assert res_json['message'] == (
             f"Student {self.user.id} is already on the certificate invalidation list and cannot be added to the "
-            f"certificate exception list."
+            "certificate exception list."
         )
 
 
@@ -1031,7 +1031,6 @@ class TestCertificatesInstructorApiBulkWhiteListExceptions(SharedModuleStoreTest
         assert len(data['general_errors']) == 1
         assert len(data['success']) == 0
 
-
     def test_certificate_invalidation_already_exists(self):
         """
         Test to confirm an error message is raised when generating a certificate exception for a learner appears in the
@@ -1053,11 +1052,8 @@ class TestCertificatesInstructorApiBulkWhiteListExceptions(SharedModuleStoreTest
         # attempt to add learner to the allowlist, expect an error
         csv_content = b"test_student1@example.com,notes"
         data = self.upload_file(csv_content=csv_content)
-        self.assertEqual(len(data['row_errors']['user_on_certificate_invalidation_list']), 1)
-        self.assertEqual(
-            data['row_errors']['user_on_certificate_invalidation_list'][0],
-            'user "TestStudent1" in row# 1'
-        )
+        assert len(data['row_errors']['user_on_certificate_invalidation_list']) == 1
+        assert data['row_errors']['user_on_certificate_invalidation_list'][0] == 'user "TestStudent1" in row# 1'
 
     def upload_file(self, csv_content):
         """
@@ -1341,10 +1337,7 @@ class CertificateInvalidationViewTests(SharedModuleStoreTestCase):
         invalidation lists.
         """
         # add test learner to the allowlist
-        certificate_exception_item = CertificateWhitelistFactory.create(
-            user=self.enrolled_user_1,
-            course_id=self.course.id
-        )
+        CertificateWhitelistFactory.create(user=self.enrolled_user_1, course_id=self.course.id)
 
         # now try and add them to the invalidation list, expect an error
         response = self.client.post(
@@ -1354,11 +1347,9 @@ class CertificateInvalidationViewTests(SharedModuleStoreTestCase):
         )
 
         res_json = json.loads(response.content.decode('utf-8'))
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            res_json['message'],
+        assert response.status_code == 400
+        assert res_json['message'] == (
             f"The student {self.enrolled_user_1.username} appears on the Certificate Exception list in course "
             f"{self.course.number}. Please remove them from the Certificate Exception list before attempting to "
-            f"invalidate their certificate."
+            "invalidate their certificate."
         )
