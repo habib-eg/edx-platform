@@ -4353,6 +4353,7 @@ class TestBulkCohorting(SharedModuleStoreTestCase):
             'username,email,cohort\r\nfoo_username,bar_email,baz_cohort', mock_store_upload, mock_cohort_task
         )
 
+
 class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
     """
     Tests for utility functions utilized in the Instructor Dashboard Certificates app.
@@ -4445,7 +4446,7 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
         """
         result = _check_if_learner_on_allowlist(self.course.id, self.user)
 
-        assert result == False
+        assert not result
 
     def test_check_if_learner_on_allowlist_allowlist_entry_exists(self):
         """
@@ -4458,7 +4459,7 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
 
         result = _check_if_learner_on_allowlist(self.course.id, self.user)
 
-        assert result == True
+        assert result
 
     def test_check_if_learner_on_blocklist_no_cert(self):
         """
@@ -4467,7 +4468,7 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
         """
         result = _check_if_learner_on_blocklist(self.course.id, self.user)
 
-        assert result == False
+        assert not result
 
     def test_check_if_learner_on_blocklist_with_cert(self):
         """
@@ -4482,7 +4483,7 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
         )
 
         result = _check_if_learner_on_blocklist(self.course.id, self.user)
-        assert result == False
+        assert not result
 
     def test_check_if_learner_on_blocklist_blocklist_entry_exists(self):
         """
@@ -4503,7 +4504,7 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
         )
 
         result = _check_if_learner_on_blocklist(self.course.id, self.user)
-        assert result == True
+        assert result
 
     def test_check_if_learner_on_blocklist_inactive_blocklist_entry_exists(self):
         """
@@ -4523,4 +4524,4 @@ class TestInstructorCertificateExceptions(SharedModuleStoreTestCase):
         )
 
         result = _check_if_learner_on_blocklist(self.course.id, self.user)
-        assert result == False
+        assert not result
